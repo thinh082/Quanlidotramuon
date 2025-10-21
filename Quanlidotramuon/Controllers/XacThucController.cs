@@ -54,7 +54,7 @@ namespace Quanlidotramuon.Controllers
                 DiaChi = model.DiaChi,
                 HoTen = model.HoTen,
                 NgayTao = DateTime.Now,
-                LoaiTaiKhoanId = 1
+                LoaiTaiKhoanId = model.LoaiTaiKhoanId
             };
             _context.TaiKhoans.Add(newUser);
             _context.SaveChanges();
@@ -134,6 +134,7 @@ namespace Quanlidotramuon.Controllers
             public string HoTen { get; set; }
             public string MatKhau { get; set; }
             public string SoDienThoai { get; set; }
+            public int LoaiTaiKhoanId { get; set; } 
         }
         public class DangNhapRequest
         {
