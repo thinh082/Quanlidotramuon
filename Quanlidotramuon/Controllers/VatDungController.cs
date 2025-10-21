@@ -105,7 +105,7 @@ namespace Quanlidotramuon.Controllers
             existingVatDung.HinhAnh = vatDung.HinhAnh;
             existingVatDung.DanhMucId = vatDung.DanhMucId;
             _context.VatDungs.Update(existingVatDung);
-            _context.SaveChanges();
+            _context.SaveChanges();//
             return Ok(new { message = "Cập nhật vật dụng thành công", success = true });
         }
         [HttpPost("XoaVatDung")]
