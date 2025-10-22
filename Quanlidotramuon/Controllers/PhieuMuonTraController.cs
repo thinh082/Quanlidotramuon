@@ -16,7 +16,32 @@ namespace Quanlidotramuon.Controllers
         [HttpGet("DanhSachPhieuMuonTra")]
         public IActionResult DanhSachPhieuMuonTra()
         {
+
             var phieuMuonTras = _context.PhieuMuons.Select(r => new
+            {
+                r.Id,
+                r.SoLuong,
+                r.NgayMuon,
+                r.NgayTraDuKien,
+                r.NgayTraThucTe,
+                r.GhiChu,
+                r.TrangThaiId,
+                r.NgayTao,
+                VatDung = new
+                {
+                    r.VatDung.Id,
+                    r.VatDung.TenVatDung,
+                    r.VatDung.MoTa,
+                    r.VatDung.TinhTrang
+                },
+            }).ToList();
+            return Ok(phieuMuonTras);
+        }
+        [HttpPost("DanhSachPhieuMuonTraTheoChuSoHuu")]
+        public IActionResult DanhSachPhieuMuonTraTheoChuSoHuu(int idTaiKhoan)
+        {
+
+            var phieuMuonTras = _context.PhieuMuons.Where(r => r.ChuSoHuuId == idTaiKhoan).Select(r => new
             {
                 r.Id,
                 r.SoLuong,
