@@ -123,22 +123,87 @@ namespace Quanlidotramuon.Controllers
         [HttpPost("ThemPhieuMuonTra")]
         public IActionResult ThemPhieuMuonTra([FromBody] ThemPhieuMuon phieuMuon)
         {
-            var newPhieuMuon = new PhieuMuon
+            if (phieuMuon == null)
             {
-                VatDungId = phieuMuon.VatDungId,
-                NguoiMuonId = phieuMuon.NguoiMuonId,
-                ChuSoHuuId = phieuMuon.ChuSoHuuId,
-                SoLuong = phieuMuon.SoLuong,
-                NgayMuon = phieuMuon.NgayMuon,
-                NgayTraDuKien = phieuMuon.NgayTraDuKien,
-                GhiChu = phieuMuon.GhiChu,
-                TrangThaiId = 1, 
-                NgayTao = DateTime.Now
-            };
-            _context.PhieuMuons.Add(newPhieuMuon);
-            _context.SaveChanges();
-            return Ok(new { message = "Thêm phiếu mượn trả thành công", success = true });
+                return BadRequest(new { message = "Dữ liệu không hợp lệ", success = false });
+            }
+
+            if (phieuMuon.SoLuong <= 0)
+            {
+                return BadRequest(new { message = "Số lượng mượn phải lớn hơn 0", success = false });
+            }
+
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                // Kiểm tra vật dụng có tồn tại không
+                var vatDung = _context.VatDungs.FirstOrDefault(v => v.Id == phieuMuon.VatDungId);
+                if (vatDung == null)
+                {
+                    return NotFound(new { message = "Vật dụng không tồn tại", success = false });
+                }
+
+                // Kiểm tra số lượng tồn kho
+                var soLuongTon = vatDung.SoLuongCon ?? 0;
+                if (phieuMuon.SoLuong > soLuongTon)
+                {
+                    return BadRequest(new
+                    {
+                        message = $"Số lượng mượn ({phieuMuon.SoLuong}) vượt quá số lượng tồn ({soLuongTon})",
+                        success = false,
+                    });
+                }
+
+                // Kiểm tra vật dụng có thể mượn hay không
+                if (vatDung.CoTheMuon != true)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Vật dụng này không thể mượn",
+                        success = false,
+                        soLuongTon = soLuongTon
+                    });
+                }
+
+                // Tạo phiếu mượn
+                var newPhieuMuon = new PhieuMuon
+                {
+                    VatDungId = phieuMuon.VatDungId,
+                    NguoiMuonId = phieuMuon.NguoiMuonId,
+                    ChuSoHuuId = phieuMuon.ChuSoHuuId,
+                    SoLuong = phieuMuon.SoLuong,
+                    NgayMuon = phieuMuon.NgayMuon,
+                    NgayTraDuKien = phieuMuon.NgayTraDuKien,
+                    GhiChu = phieuMuon.GhiChu,
+                    TrangThaiId = 1,
+                    NgayTao = DateTime.Now
+                };
+                _context.PhieuMuons.Add(newPhieuMuon);
+
+                // Cập nhật tồn kho
+                vatDung.SoLuongCon = soLuongTon - phieuMuon.SoLuong;
+                _context.VatDungs.Update(vatDung);
+
+                _context.SaveChanges();
+                transaction.Commit();
+
+                return Ok(new
+                {
+                    message = "Thêm phiếu mượn trả thành công",
+                    success = true,
+                    soLuongTonTruocKhiMuon = soLuongTon,
+                    soLuongTonSauKhiMuon = vatDung.SoLuongCon,
+                    soLuongDaMuon = phieuMuon.SoLuong,
+                    tenVatDung = vatDung.TenVatDung
+                });
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                return StatusCode(500, new { message = "Có lỗi xảy ra", success = false, error = ex.Message });
+            }
         }
+
         [HttpPost("CapNhatPhieuMuonTra")]
         public IActionResult CapNhatPhieuMuonTra([FromBody] SuaPhieuMuon phieuMuon)
         {

@@ -18,7 +18,7 @@ namespace Quanlidotramuon.Controllers
         [HttpGet("DanhSachVatDung")]
         public async Task<IActionResult> DanhSachVatDung()
         {
-            var vatDungs = await _context.VatDungs.Where(r=>r.CoTheMuon==true).Select(r => new
+            var vatDungs = await _context.VatDungs.Where(r=>r.CoTheMuon==true&& r.SoLuongCon>0).Select(r => new
             {
                 r.ChuSoHuuId,
                 r.TenVatDung,
